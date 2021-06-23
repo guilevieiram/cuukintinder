@@ -1,9 +1,9 @@
 {% extends 'layout.html' %} {% block content %}
 {% for item in users %}
+<h1>Users:</h1>
 <p>
   user: {{item.user}}, recipe_id: {{item.recipe_id}}, classification:
   {{item.classification}}
 </p>
 {% endfor %} 
-<p>Test for heroku deployment</p>
 {% endblock content %}

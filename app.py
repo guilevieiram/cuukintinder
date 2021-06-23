@@ -53,6 +53,8 @@ class Recommendation_Algorithm():
         if not users_table == None:
             self.users = pd.read_sql(users_table, conn)
 
+        print(self.recipes.head())
+
     def get_image_links(self):
         # Web scrapper to get all image links and upload them onto the recipes table using selenium
 
@@ -149,10 +151,32 @@ class Recommendation_Algorithm():
     def sort_recommended_recipes(self, user):
         users = self.users
 
+        '''
+        we may have a bug here, not sure.
+
+        the sql recipes table starts with index 1 and that index is imported in the "id" column
+        for the self.recipes dataframe
+
+        here we are using those indexes to sort out the similarity matrix, which uses indexes from 0
+
+        maybe all the classifications are kind of shifted
+
+        sorry future me or someone who is looking at this code right now. my bad.
+        '''
+
+        '''
+        update: maybe i fixed it by subtracting 1 from each index passed as a user entry
+        this works because the recipes df initializes with newly made indexes.
+        So we just fix this sqlalchemy bs manually...
+        '''
+
         # Getting positive and negative reviews from user
         users = users[users['user']==user].drop(columns='user')
         positive_indexes = list(users[users['classification']==1]['recipe_id'])
+        positive_indexes = [index-1 for index in positive_indexes]
         negative_indexes = list(users[users['classification']==0]['recipe_id'])
+        negative_indexes = [index-1 for index in negative_indexes]
+
         classified_indexes = positive_indexes + negative_indexes
 
         # making copy of similarity matrix
@@ -238,15 +262,13 @@ class Recommendation_Algorithm():
         return ' '.join([table[label] for label in labels])
 
 
-# this is a test for linux use
-
 # STARTING FLASK APP
 app = Flask(__name__)
 app.secret_key = "hihihihi"
 app.permanent_session_lifetime = timedelta(minutes=5)
 
 # CONFIGURING DATA BASE
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite3"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -393,9 +415,9 @@ def logout():
     session.pop("recipe_id", None)
     return redirect(url_for("login"))
 
-@app.route("/viewdb")
-def view_db():
-    return render_template("db.html", title="DB", users=Users_Classifications.query.all())
+@app.route("/admin")
+def admin():
+    return render_template("db.html", title="admin", users=Users_Classifications.query.all())
 
 @app.route("/recipes")
 def recipes_page():
@@ -411,4 +433,4 @@ def about():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
