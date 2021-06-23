@@ -22,7 +22,7 @@ class Recommendation_Algorithm():
 
 
     # Main public methods
-    def initialize_tables(self, recipe_path=None, users_path=None, lessons_path=None):
+    def initialize_tables(self, recipe_path=None, users_path=None):
         if not recipe_path == None:
             if recipe_path.endswith('.csv'):
                 self.recipes_raw = pd.read_csv(recipe_path)
@@ -34,12 +34,6 @@ class Recommendation_Algorithm():
                 self.users = pd.read_csv(users_path)
             if users_path.endswith('.json'):
                 self.users = pd.read_json(users_path)
-
-        if not lessons_path == None:
-            if lessons_path.endswith('.csv'):
-                self.lessons = pd.read_csv(lessons_path)
-            if lessons_path.endswith('.json'):
-                self.lessons = pd.read_json(lessons_path)
 
     def initialize_tables_from_sql(self, conn, recipe_table=None):
         if not recipe_table == None:
@@ -87,7 +81,6 @@ class Recommendation_Algorithm():
     def clean_data(self, ratings_count_treshold=10, ratings_value_treshold=3.0):
         self._clean_recipe_table(ratings_count_treshold, ratings_value_treshold)
         self._clean_users_table()
-        self._clean_lessons_table()
 
     def export_data(self, path):
         # Exporting csv
@@ -103,61 +96,11 @@ class Recommendation_Algorithm():
         # To numpy array
         self.similarity_matrix = np.array(cosine_sim)
 
-    def recommend_by_lesson(self, user, lesson_id):
-        users = self.users
-        lessons = self.lessons
-
-        # Creating lists for positive classified recipes and for negative classified recipes
-        users = users[users['user']==user].drop(columns='user')
-        positive_indexes = list(users[users['classification']==1]['recipe_id'])
-        negative_indexes = list(users[users['classification']==0]['recipe_id'])
-
-        # Getting lesson recipes
-        recipes_ids = list(lessons[lessons['lesson_id']==lesson_id]['recipe_id'])
-
-        # making copy of similarity matrix
-        similarity_matrix = self.similarity_matrix
-
-        # Flipping sign of negatives
-        similarity_matrix[:,negative_indexes] = -similarity_matrix[:,negative_indexes]
-
-        # Reducing matrix given user evaluated recipes
-        similarity_matrix = similarity_matrix[:, positive_indexes + negative_indexes]
-
-        # Reducing matrix given recipes ids
-        similarity_matrix = similarity_matrix[recipes_ids,:]
-
-        # Creating score vector for given recipes
-        score_vector = similarity_matrix.sum(axis=1)
-
-        # Getting index of best match
-        index = recipes_ids[score_vector.argmax()]
-
-        # Getting that recipe name
-        name = self.recipes.at[index, 'title']
-
-        return index, name
-
     def sort_recommended_recipes(self, conn, user, users_table="users_classifications"):
         users = pd.read_sql(users_table, conn)
 
         '''
-        we may have a bug here, not sure.
-
-        the sql recipes table starts with index 1 and that index is imported in the "id" column
-        for the self.recipes dataframe
-
-        here we are using those indexes to sort out the similarity matrix, which uses indexes from 0
-
-        maybe all the classifications are kind of shifted
-
-        sorry future me or someone who is looking at this code right now. my bad.
-        '''
-
-        '''
-        update: maybe i fixed it by subtracting 1 from each index passed as a user entry
-        this works because the recipes df initializes with newly made indexes.
-        So we just fix this sqlalchemy bs manually...
+        
         '''
 
         # Getting positive and negative reviews from user
@@ -182,13 +125,9 @@ class Recommendation_Algorithm():
         score_vector = similarity_matrix.sum(axis=1)
 
         # Getting indexes that sort score array
-        sorted_indexes = list(np.argsort(score_vector))
+        sorted_indexes = list(np.argsort(score_vector))[::-1]
 
-        # Removing classified recipes
-        for recipe_id in classified_indexes:
-            sorted_indexes.remove(recipe_id)
-
-        return sorted_indexes
+        return [index + 1 for index in sorted_indexes]
 
 
 
@@ -227,10 +166,8 @@ class Recommendation_Algorithm():
         self.recipes = recipes.reset_index(drop=True)
 
     def _clean_users_table(self):
-        self.users[['recipe_id','classification']].astype('int64', copy=False)
         
-    def _clean_lessons_table(self):
-        self.lessons.astype('int64', copy=False)
+        self.users[['recipe_id','classification']].astype('int64', copy=False)
 
     # Miscelanious methods
     def get_rating(self, number):
