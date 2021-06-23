@@ -53,8 +53,6 @@ class Recommendation_Algorithm():
         if not users_table == None:
             self.users = pd.read_sql(users_table, conn)
 
-        print(self.recipes.head())
-
     def get_image_links(self):
         # Web scrapper to get all image links and upload them onto the recipes table using selenium
 
@@ -375,7 +373,6 @@ def home():
         user = session["user"]
         recipe_id = session["recipe_id"]
         if request.method == "POST":
-            print("post method activated")
             classification = request.form["classification"]
 
             user_classification = Users_Classifications(

@@ -1,6 +1,6 @@
 {% extends 'layout.html' %} {% block content %}
-{% for item in users %}
 <h1>Users:</h1>
+{% for item in users %}
 <p>
   user: {{item.user}}, recipe_id: {{item.recipe_id}}, classification:
   {{item.classification}}
