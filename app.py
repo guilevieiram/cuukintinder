@@ -17,7 +17,7 @@ app.permanent_session_lifetime = timedelta(days=7)
 # CONFIGURING DATA BASE
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite3"
 app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql://gazcuunctivuns:9c811cafb7a006fe7802c6016466fcb7a4e7fe8585651ba90d3a3a21f9f4f0bb@ec2-3-89-0-52.compute-1.amazonaws.com:5432/d9v8ohbufnektr'
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
@@ -25,7 +25,7 @@ db = SQLAlchemy(app)
 class Users_Classifications(db.Model):
 	__tablename__ = 'users_classifications'
 	_id = db.Column("id", db.Integer, primary_key=True)
-	user = db.Column("user", db.String(100))
+	user = db.Column("user", db.Text)
 	recipe_id = db.Column("recipe_id", db.Integer)
 	classification = db.Column("classification", db.Integer)
 
@@ -35,18 +35,18 @@ class Users_Classifications(db.Model):
 		self.classification = classification
 
 class Recipes(db.Model):
-	__tablename__='bbc_recipes'
+	__tablename__='recommendation_recipes'
 	_id = db.Column("id", db.Integer, primary_key=True)
-	title = db.Column(db.String(100))
-	description = db.Column(db.String(500))
-	recipe_link = db.Column(db.String(100)) 
-	image_link = db.Column(db.String(100))
-	keywords = db.Column(db.String(100))
+	title = db.Column(db.Text)
+	description = db.Column(db.Text)
+	recipe_link = db.Column(db.Text) 
+	image_link = db.Column(db.Text)
+	keywords = db.Column(db.Text)
 	rating = db.Column(db.Float)
 	rating_count = db.Column(db.Integer)
-	category = db.Column(db.String(50))
-	cuisine = db.Column(db.String(50))
-	soup = db.Column(db.String(1000))
+	category = db.Column(db.Text)
+	cuisine = db.Column(db.Text)
+	soup = db.Column(db.Text)
 
 	def __init__(self, title, description, recipe_link, image_link, keywords, rating, rating_count, category, cuisine, soup):
 		self.title = title
@@ -61,10 +61,10 @@ class Recipes(db.Model):
 		self.soup = soup
 
 class Users_Recommendations(db.Model):
-	__tablename__='users_recommendations'
+	__tablename__='bbc_users_recommendations'
 	_id=db.Column("id", db.Integer, primary_key=True)
-	user=db.Column("user", db.String(100))
-	recommendation_list=db.Column("recommendation_list", db.String(1000))
+	user=db.Column("user", db.Text)
+	recommendation_list=db.Column("recommendation_list", db.Text)
 
 	def __init__(self, user, list):
 		self.user = user
@@ -116,12 +116,15 @@ def initialize_recommendation_model():
 	'''
 	
 	recommendation = Recommendation_Algorithm()
-	recommendation.initialize_tables_from_sql(db.engine, 'bbc_recipes')
+	recommendation.initialize_tables_from_sql(db.engine, 'recommendation_recipes')
 	recommendation.initialize_model()
 
 	return recommendation
 
 def update_recommendations(conn, user, recommendation):
+	'''
+	we can maybe make this faster, by using less connections with the db
+	'''
 	index_list = recommendation.sort_recommended_recipes(conn, user)
 	user_rec = Users_Recommendations(user, index_list)
 	db.session.add(user_rec)
@@ -189,11 +192,18 @@ def admin():
 def recipes_page():
 	if 'user' in session:
 		user = session['user']
-		index_list_string = Users_Recommendations.query.filter_by(user=user).all()[-1].recommendation_list.split(",")
-		index_list = [int(x) for x in index_list_string]
+		user_query = Users_Recommendations.query.filter_by(user=user).all()
 
-		return render_template("recipes.html", title="Recipes", recipes=Recipes.query.all(), 
-		index_list = index_list)
+		if not user_query:
+			return redirect(url_for('home'))
+
+		else: 
+			index_list_string = user_query[-1].recommendation_list.split(",")
+			index_list = [int(x) for x in index_list_string]
+
+			return render_template("recipes.html", title="Recipes", recipes=Recipes.query.all(), 
+			index_list = index_list)
+			
 	else:
 		return redirect(url_for('login'))
 
