@@ -16,14 +16,15 @@ app.permanent_session_lifetime = timedelta(days=7)
 
 # CONFIGURING DATA BASE
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite3"
-app.config["SQLALCHEMY_DATABASE_URI"] = 'postgresql://gazcuunctivuns:9c811cafb7a006fe7802c6016466fcb7a4e7fe8585651ba90d3a3a21f9f4f0bb@ec2-3-89-0-52.compute-1.amazonaws.com:5432/d9v8ohbufnektr'
+# app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["POSTGRESQL"]
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://guilevieiram:Aquario0.@database-1.cvjpiq5m2lty.eu-west-2.rds.amazonaws.com:5432/mydb"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
 # TABLES CLASSES
 class Users_Classifications(db.Model):
-	__tablename__ = 'users_classifications'
+	__tablename__ = 'user_classifications'
 	_id = db.Column("id", db.Integer, primary_key=True)
 	user = db.Column("user", db.Text)
 	recipe_id = db.Column("recipe_id", db.Integer)
@@ -35,7 +36,7 @@ class Users_Classifications(db.Model):
 		self.classification = classification
 
 class Recipes(db.Model):
-	__tablename__='recommendation_recipes'
+	__tablename__='recipes'
 	_id = db.Column("id", db.Integer, primary_key=True)
 	title = db.Column(db.Text)
 	description = db.Column(db.Text)
@@ -61,7 +62,7 @@ class Recipes(db.Model):
 		self.soup = soup
 
 class Users_Recommendations(db.Model):
-	__tablename__='bbc_users_recommendations'
+	__tablename__='user_recommendations'
 	_id=db.Column("id", db.Integer, primary_key=True)
 	user=db.Column("user", db.Text)
 	recommendation_list=db.Column("recommendation_list", db.Text)
@@ -116,7 +117,7 @@ def initialize_recommendation_model():
 	'''
 	
 	recommendation = Recommendation_Algorithm()
-	recommendation.initialize_tables_from_sql(db.engine, 'recommendation_recipes')
+	recommendation.initialize_tables_from_sql(db.engine, 'recipes')
 	recommendation.initialize_model()
 
 	return recommendation
@@ -125,7 +126,7 @@ def update_recommendations(conn, user, recommendation):
 	'''
 	we can maybe make this faster, by using less connections with the db
 	'''
-	index_list = recommendation.sort_recommended_recipes(conn, user)
+	index_list = recommendation.sort_recommended_recipes(conn, user, users_table='user_classifications')
 	user_rec = Users_Recommendations(user, index_list)
 	db.session.add(user_rec)
 	db.session.commit()

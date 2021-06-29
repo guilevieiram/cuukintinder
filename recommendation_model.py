@@ -96,7 +96,7 @@ class Recommendation_Algorithm():
         # To numpy array
         self.similarity_matrix = np.array(cosine_sim)
 
-    def sort_recommended_recipes(self, conn, user, users_table="users_classifications"):
+    def sort_recommended_recipes(self, conn, user, users_table="user_classifications"):
         users = pd.read_sql(users_table, conn)
 
         '''
