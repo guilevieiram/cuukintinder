@@ -17,7 +17,8 @@ app.permanent_session_lifetime = timedelta(days=7)
 # CONFIGURING DATA BASE
 # app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///data.sqlite3"
 # app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["POSTGRESQL"]
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://guilevieiram:Aquario0.@database-1.cvjpiq5m2lty.eu-west-2.rds.amazonaws.com:5432/mydb"
+# app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://guilevieiram:Aquario0.@database-1.cvjpiq5m2lty.eu-west-2.rds.amazonaws.com:5432/mydb"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://klqyvsofizsjcb:b6ef78f91f8e3be4f5861c490efe52d99d6c1c1cb3c472839a90bf73db9704a7@ec2-54-157-100-65.compute-1.amazonaws.com:5432/d8pld4q9k569uv"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
