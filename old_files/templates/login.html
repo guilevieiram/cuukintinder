@@ -1,0 +1,18 @@
+{% extends 'layout.html' %} {% block content %}
+
+<!-- login form (just email) -->
+<form action="#" method="post" class="form-signin" style="text-align: center;">
+  <h1 class="h2 mb-3 font-weight-normal">Login to your account</h1>
+  <div style="  margin-right: auto; margin-left: auto;">
+  	<input type="email" name="usr" placeholder="Username" required="" autofocus=""  
+  	class="form-control" style="width: 400px; 
+  	text-align: center; margin-right: auto; margin-left: auto; margin-top: 30px; margin-bottom: 30px" />
+  </div>
+  <button type="submit" value="submit" class="btn btn-lg btn-primary btn-block" >Login</button>
+
+</form>
+
+{% with messages = get_flashed_messages() %} {% if messages %} {% for msg in
+messages %}
+<p>{{msg}}</p>
+{% endfor %} {% endif %} {% endwith %} {% endblock content %}

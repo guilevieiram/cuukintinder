@@ -1,0 +1,10 @@
+flask
+datetime
+sklearn
+flask_sqlalchemy
+pandas
+sklearn
+numpy
+os
+selenium
+gunicorn
